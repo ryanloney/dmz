@@ -1,6 +1,7 @@
 " move a visual block around
 " use arrow keys or control-movement keys to resize windows
 " change line highlight color
+scriptencoding utf-8
 
 let mapleader = ","             " Our free key to prefix custom commands
 let localleader = "\\"
@@ -44,9 +45,8 @@ ino <C-Y> <Esc>Pa
 
 ino <C-X><C-S> <Esc>:w<CR>a
 
-" I never use macros; turn them off. Pretty controversial
-map q <Nop>
-
+" I rarely use macros, but I accidentally hit q all the time
+" map q <Nop>
 
 " Ctrl-s to save current file (in normal and insert mode)
 imap <c-s> <Esc>:w<CR>a
@@ -115,11 +115,6 @@ nnoremap <leader>l :set cursorline!<CR>
 " setenv ITERM_PROFILE solarized-dark
 "
  
-"set termguicolors
-set background=light
-hi colorcolumn ctermbg=lightgrey
-" colorscheme solarized
-"
 
 
 """""""""""""""""
@@ -220,6 +215,7 @@ nnoremap <silent> <leader>tw :set invwrap<CR>:set wrap?<CR>
 
 " Run this file through psql
 " map gp :wa<CR>:!psql -d INSERTDBNAMEHERE -f %<CR>
+" map ss :wa<CR>:!sqlcmd -D -S DBNAME -P PASSWORD -U sa -i %<CR>
 
 " Run this file through python3
 " map gy :wa<CR>:!python3 %<CR>
@@ -248,6 +244,8 @@ ab [right] →
 ab [pi] π
 ab [shrug]  ¯\_(ツ)_/¯
 ab [yhat] ŷ
+ab [space] ␢
+
 
 " Toggle invisible whiteSpace ¬ ¶
 nnoremap <leader>i :set list!<CR>
@@ -270,11 +268,11 @@ nnoremap <leader><leader> <c-^>
 nnoremap `` <c-^>
 
 " Indent and outdent now > and < keep the visual selection
+
 vnoremap > >gv
 vnoremap < <gv
 vnoremap <Tab> >gv
 vnoremap <S-Tab> <gv
-
 " Make Control-T uppercase the current word 
 inoremap <C-t> <ESC>bgUWea
 
@@ -309,9 +307,29 @@ call plug#begin('~/.config/nvim/plugged')
 	" Solarized without the junk: flattened
 	" https://github.com/romainl/flattened
 	" http://vimawesome.com/plugin/solarized-8
-	Plug 'scottstanfield/neovim-colors-solarized-truecolor-only'
+	" Plug 'scottstanfield/neovim-colors-solarized-truecolor-only'
 	Plug 'itchyny/lightline.vim'
 
+	Plug 'edkolev/tmuxline.vim', {'on': ['Tmuxline', 'TmuxlineSimple', 'TmuxlineSnapshot'] }
+	let g:tmuxline_preset               = 'minimal'
+	let g:tmuxline_theme                = 'lightline'
+	let g:tmuxline_powerline_separators = 0
+	let g:tmuxline_status_justify       = 'left'
+
+	" Special prompt variables come from stftime and https://github.com/edkolev/tmuxline.vim
+
+	let g:tmuxline_preset = {
+		\'a'    : '#S',
+		\'cwin' : '#I #W',
+		\'win'  : '#I #W',
+		\'y'    : '%a %b %e',
+		\'z'    : '%-l:%M %p'}
+	nmap <leader>tm :Tmuxline<CR>
+
+	" Test tmux settings from vim (weird, I know) by typing ,tm
+	" If good, run :TmuxlineSnapshot ~/.tmux.snapshot
+	" Then merge that into the bottom of your .tmux.conf
+	
 	Plug 'junegunn/rainbow_parentheses.vim'
 	let g:rainbow#pairs = [['(', ')'], ['[', ']']]
 
@@ -329,14 +347,16 @@ call plug#begin('~/.config/nvim/plugged')
 
     " Python
     Plug 'neomake/neomake'
-    "let g:neomake_python_enabled_makers = ['flake8', 'pep8']
-    "let g:neomake_python_enabled_makers = ['flake8', 'pep8', 'vulture']
-    "let g:neomake_python_flake8_maker = { 'args': ['--ignore=E302,E501'], }
+    let g:neomake_python_enabled_makers = ['flake8']
+    "let g:neomake_python_enabled_makers = ['flake8', 'vulture']
+    let g:neomake_python_flake8_maker = { 'args': ['--ignore=E261,E128,E266,E302,E501,E221'], }
+    let g:neomake_python_pep8_maker = { 'args': ['--ignore=E128,E302,E266,E221'], }
 
     "   
     "  R linter with neomake!
     "  https://github.com/neomake/neomake/pull/646/files
     "
+	" If Neomake isn't installed, this line fails hard:
     autocmd! BufWritePost * Neomake
 
     " For R language
@@ -367,33 +387,30 @@ call plug#begin('~/.config/nvim/plugged')
 
     Plug 'airblade/vim-gitgutter'					" shows git diff marks in the gutter
 	nmap <silent> <leader>tg :GitGutterToggle<CR>	
-	let g:gitgutter_enabled = 0						" off by default
+	let g:gitgutter_enabled = 1						" off by default
 
 call plug#end()
 
-" Toggle line numbers on/off
-nmap <silent> <leader>tn :set invnumber<CR>
+" Toggle Line numbers on/off
+nmap <silent> <leader>tl :set invnumber<CR>
 
 " Wrapping autocmd in a group per http://bit.ly/15wKRrM
 augroup my_au
     autocmd!
-    au FileType python setlocal expandtab ts=2 sw=2 sts=2
-    au FileType ruby setlocal ts=2 sw=2 sts=2
+	"    au FileType python setlocal expandtab ts=2 sw=2 sts=2
     au FileType make setlocal noexpandtab
 
     " place this after plugins have loaded
     " Set textwidth like a boss http://blog.ezyang.com/2010/03/vim-textwidth/
     au FileType text,markdown setlocal textwidth=72 colorcolumn=80
     au FileType stylus,jade set tabstop=2|set softtabstop=2|set shiftwidth=2|set expandtab
-    au FileType javascript set ts=4|set shiftwidth=4|set expandtab
-    au FileType coffee setlocal ts=2 shiftwidth=2 shiftwidth=2 expandtab
-    au Filetype drake set ts=2 softtabstop=2 shiftwidth=2 expandtab
+    au FileType javascript set tabstop=4|set shiftwidth=4|set expandtab
     au FileType r set ts=2 softtabstop=2 shiftwidth=2 expandtab
 
     au BufEnter *.tsv set tabstop=14 softtabstop=14 shiftwidth=14 noexpandtab
 
     " PEP8 has defined the proper indentation for Python
-    au BufNewFile,BufRead *.py set ts=2 sts=2 sw=2 tw=90 expandtab fileformat=unix
+    au BufNewFile,BufRead *.py set tabstop=4 softtabstop=4 shiftwidth=4 textwidth=90 expandtab fileformat=unix
 
     " Turn off line wrapping when working on HTML files
     au BufNewFile,BufRead *.html setlocal nowrap
@@ -402,6 +419,7 @@ augroup END
 augroup rainbow_paren
 	autocmd!
 	autocmd FileType r RainbowParentheses
+	autocmd FileType python RainbowParentheses
 augroup END
 
 
@@ -411,7 +429,7 @@ function! PositionCursorFromViminfo()
         exe "normal! g`\""
     endif
 endfunction
-au BufReadPost * call PositionCursorFromViminfo()
+autocmd BufReadPost * call PositionCursorFromViminfo()
 
 
 " Trim trailing characters when files are saved
@@ -509,3 +527,20 @@ hi Folded ctermbg=7 ctermfg=4
 highlight Search term=bold ctermbg=LightMagenta guibg=LightMagenta
 
 highlight CursorLine cterm=none ctermbg=LightGrey 
+
+" Colors
+
+if exists('$TMUX')
+	let &t_8f = "<Esc>[38;2;%lu;%lu;%lum"
+	let &t_8b = "<Esc>[48;2;%lu;%lu;%lum"
+endif
+set termguicolors
+set background=dark
+hi colorcolumn ctermbg=lightgrey
+colorscheme solarized8_dark_high
+"colorscheme solarized8
+
+
+
+
+
